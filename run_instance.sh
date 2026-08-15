@@ -3,11 +3,12 @@
 # run_instance.sh — run your library on a single instance and report the verdict.
 # Arguments (the interface version, then the instance's instances.csv columns in file order):
 # - $1: interface version string, e.g. "v1"
-# - $2: benchmark,  the set representation, e.g. "zonotope"
-# - $3: instance,   "<operation>-<n>d-<device>", e.g. "matMul-500d-gpu"
+# - $2: benchmark,  the set representation, e.g. "zonotope" or "zonotope-batched"
+# - $3: instance,   "<operation>-<n>d[-b<batch>]-<device>", e.g. "matMul-500d-b10-gpu"
 # - $4: repetition, how often to repeat the operation within this run, e.g. "100"
 # - $5: device,     "cpu" or "gpu"
-# - $6: params,     JSON object with the operation's arguments, e.g. '{"dim": 500, "device": "gpu"}'
+# - $6: params,     JSON object with the operation's arguments, e.g.
+#                   '{"dim": 500, "device": "gpu", "batch_size": 10}'
 # A column added to the catalog later arrives as a further argument, in file order, and
 # the results file to write is always the LAST argument.
 #
@@ -36,10 +37,13 @@ RESULTS_FILE="${@: -1}"
 
 # The instance name carries the operation; its arguments come from the params JSON.
 # python3 is always present on the worker (the harness itself runs on it).
+# batch_size is absent on the unbatched benchmarks, hence the default of 1.
 OPERATION="${INSTANCE%%-*}"
-DIM=$(printf '%s' "$PARAMS" | python3 -c 'import json,sys; print(json.load(sys.stdin)["dim"])')
+read -r DIM BATCH_SIZE <<EOF
+$(printf '%s' "$PARAMS" | python3 -c 'import json,sys; p=json.load(sys.stdin); print(p["dim"], p.get("batch_size", 1))')
+EOF
 
-echo "Running $OPERATION on $BENCHMARK in ${DIM}d, x$REPETITION, on $DEVICE -> $RESULTS_FILE"
+echo "Running $OPERATION on $BENCHMARK in ${DIM}d, batch $BATCH_SIZE, x$REPETITION, on $DEVICE -> $RESULTS_FILE"
 
 # Report unsupported rather than silently falling back to the CPU, which would otherwise
 # be recorded as a GPU measurement.
@@ -54,9 +58,10 @@ fi
 # usable as a test tool before you fill it in.
 # TODO: replace this with the real invocation — dispatch on $OPERATION
 # (generateRandom / matMul / minkSum / ...) for the $BENCHMARK set representation in
-# dimension $DIM on $DEVICE, repeated $REPETITION times. The `test` benchmark is the
-# exception: its operations must do nothing, since it measures pure overhead. See the
-# benchmark catalog for what each operation must do:
+# dimension $DIM on $DEVICE, repeated $REPETITION times. On a "-batched" benchmark, run it
+# on a batch of $BATCH_SIZE sets in one call rather than looping. The `test` benchmarks are
+# the exception: their operations must do nothing, since they measure pure overhead. See
+# the benchmark catalog for what each operation must do:
 # https://github.com/CORA-COMP/benchmarks
 sleep 1
 

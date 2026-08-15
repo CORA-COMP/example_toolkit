@@ -3,11 +3,12 @@
 # prepare_instance.sh — run before each instance.
 # Arguments (the interface version, then the instance's instances.csv columns in file order):
 # - $1: interface version string, e.g. "v1"
-# - $2: benchmark,  the set representation, e.g. "zonotope"
-# - $3: instance,   "<operation>-<n>d-<device>", e.g. "matMul-500d-gpu"
+# - $2: benchmark,  the set representation, e.g. "zonotope" or "zonotope-batched"
+# - $3: instance,   "<operation>-<n>d[-b<batch>]-<device>", e.g. "matMul-500d-b10-gpu"
 # - $4: repetition, how often to repeat the operation within this run, e.g. "100"
 # - $5: device,     "cpu" or "gpu"
-# - $6: params,     JSON object with the operation's arguments, e.g. '{"dim": 500, "device": "gpu"}'
+# - $6: params,     JSON object with the operation's arguments, e.g.
+#                   '{"dim": 500, "device": "gpu", "batch_size": 10}'
 # A column added to the catalog later arrives as a further argument, in file order.
 #
 # A nonzero exit code skips this instance.
