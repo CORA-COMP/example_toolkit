@@ -59,9 +59,10 @@ fi
 # TODO: replace this with the real invocation — dispatch on $OPERATION
 # (generateRandom / matMul / minkSum / ...) for the $BENCHMARK set representation in
 # dimension $DIM on $DEVICE, repeated $REPETITION times. On a "-batched" benchmark, run it
-# on a batch of $BATCH_SIZE sets in one call rather than looping. The `test` benchmarks are
-# the exception: their operations must do nothing, since they measure pure overhead. See
-# the benchmark catalog for what each operation must do:
+# on a batch of $BATCH_SIZE sets in one call rather than looping. The `test` benchmark's
+# one instance ($OPERATION = startup) is the exception: start the library and initialize a
+# single zonotope, nothing more — its time is the startup overhead to subtract from every
+# other measurement. See the benchmark catalog for what each operation must do:
 # https://github.com/CORA-COMP/benchmarks
 sleep 1
 
