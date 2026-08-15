@@ -7,12 +7,13 @@ writes a valid `finished` result — so you can submit it as a test tool before 
 in.
 
 Each instance names a set representation (`benchmark`, e.g. `zonotope` or its vectorized
-`zonotope-batched` variant), an operation with its dimension, batch size, and device
-(`instance`, e.g. `matMul-500d-b10-gpu`), how often to repeat it (`repetition`), where to
-run it (`device`, `cpu` or `gpu`), and the operation's arguments as JSON (`params` —
-carrying `batch_size` only on the batched benchmarks). Those columns are passed to your
-scripts in that order, after the interface version. What each operation must do is defined
-in the [benchmark catalog](https://github.com/CORA-COMP/benchmarks).
+`zonotope-batched` variant), the case within it (`instance`, e.g. `matMul-500d-b10-gpu`),
+how often to repeat the operation (`repetition`), and everything the operation needs as
+JSON (`params`: `operation`, `dim`, `device`, plus `batch_size` on the batched
+benchmarks). Those columns are passed to your scripts in that order, after the interface
+version. Dispatch on `params` rather than on the instance name, which only repeats the
+same facts in readable form. What each operation must do is defined in the
+[benchmark catalog](https://github.com/CORA-COMP/benchmarks).
 
 ## What goes where
 

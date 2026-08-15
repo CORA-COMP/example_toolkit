@@ -6,9 +6,8 @@
 # - $2: benchmark,  the set representation, e.g. "zonotope" or "zonotope-batched"
 # - $3: instance,   "<operation>-<n>d[-b<batch>]-<device>", e.g. "matMul-500d-b10-gpu"
 # - $4: repetition, how often the operation is repeated in the timed run, e.g. "100"
-# - $5: device,     "cpu" or "gpu"
-# - $6: params,     JSON object with the operation's arguments, e.g.
-#                   '{"dim": 500, "device": "gpu", "batch_size": 10}'
+# - $5: params,     JSON object with everything the operation needs, e.g.
+#                   '{"operation": "matMul", "dim": 500, "device": "gpu", "batch_size": 10}'
 # A column added to the catalog later arrives as a further argument, in file order.
 #
 # This step is NOT timed. It is where the operation's *inputs* are generated and written
@@ -29,15 +28,13 @@ fi
 BENCHMARK="$2"
 INSTANCE="$3"
 REPETITION="$4"
-DEVICE="$5"
-PARAMS="$6"
+PARAMS="$5"
 
-# The instance name carries the operation; its arguments come from the params JSON.
-# python3 is always present on the worker (the harness itself runs on it).
+# Everything the operation needs is in the params JSON; the instance name only repeats it
+# in readable form. python3 is always present on the worker (the harness itself runs on it).
 # batch_size is absent on the unbatched benchmarks, hence the default of 1.
-OPERATION="${INSTANCE%%-*}"
-read -r DIM BATCH_SIZE <<EOF
-$(printf '%s' "$PARAMS" | python3 -c 'import json,sys; p=json.load(sys.stdin); print(p["dim"], p.get("batch_size", 1))')
+read -r OPERATION DIM DEVICE BATCH_SIZE <<EOF
+$(printf '%s' "$PARAMS" | python3 -c 'import json,sys; p=json.load(sys.stdin); print(p["operation"], p["dim"], p["device"], p.get("batch_size", 1))')
 EOF
 
 # Handover point to run_instance.sh, which derives the same path. Both scripts run with
@@ -47,10 +44,8 @@ INPUT_FILE="inputs/${BENCHMARK}-${INSTANCE}.input"
 
 echo "Preparing $OPERATION on $BENCHMARK in ${DIM}d, batch $BATCH_SIZE, on $DEVICE"
 
-# TODO: call your library to generate this instance's inputs and write them to
+# TODO: call your library to generate the inputs $OPERATION takes, and write them to
 # "$INPUT_FILE". Pass it $OPERATION, $BENCHMARK, $DIM, $BATCH_SIZE and $DEVICE, and let it
-# dispatch on the operation itself: matMul needs a random ${DIM}x${DIM} matrix and a
-# random set, minkSum two random sets, generateRandom and startup nothing at all. On a
-# "-batched" benchmark every set is a batch of $BATCH_SIZE sets of dimension $DIM.
+# dispatch on the operation itself. The catalog says what each operation is given.
 
 exit 0
