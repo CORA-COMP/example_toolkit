@@ -14,6 +14,19 @@ carrying `batch_size` only on the batched benchmarks). Those columns are passed 
 scripts in that order, after the interface version. What each operation must do is defined
 in the [benchmark catalog](https://github.com/CORA-COMP/benchmarks).
 
+## What goes where
+
+The harness measures the wall-clock time of `run_instance.sh` alone, so the split between
+the two per-instance scripts is what decides what gets measured:
+
+- **`prepare_instance.sh` generates the inputs** and writes them to disk — for `matMul`, the
+  random matrix and the random set. This step is not timed.
+- **`run_instance.sh` reads them back once and then performs the operation `repetition`
+  times** — for `matMul`, only the multiplication. Nothing else belongs here.
+
+`generateRandom` and `startup` are the exceptions: the initialization *is* the operation,
+so there is nothing to prepare.
+
 The skeleton reports `unsupported` for every `gpu` instance. Replace that once your library
 runs on the GPU — falling back to the CPU instead would record a CPU number as a GPU
 measurement.
