@@ -5,9 +5,9 @@
 # - $1: interface version string, e.g. "v1"
 # - $2: benchmark,  the set representation, e.g. "zonotope" or "zonotope-batched"
 # - $3: instance,   "<operation>-<n>d[-b<batch>]-<device>", e.g. "matMul-500d-b10-gpu"
-# - $4: repetition, how often to repeat the operation within this run, e.g. "100"
-# - $5: params,     JSON object with everything the operation needs, e.g.
-#                   '{"operation": "matMul", "dim": 500, "device": "gpu", "batch_size": 10}'
+# - $4: params,     JSON object with everything the tool needs, e.g. '{"set": "zonotope",
+#                   "operation": "matMul", "dim": 500, "device": "gpu", "repetition": 100,
+#                   "batch_size": 10}'
 # A column added to the catalog later arrives as a further argument, in file order, and
 # the results file to write is always the LAST argument.
 #
@@ -30,22 +30,21 @@ fi
 
 BENCHMARK="$2"
 INSTANCE="$3"
-REPETITION="$4"
-PARAMS="$5"
+PARAMS="$4"
 # The results file is always the last argument.
 RESULTS_FILE="${@: -1}"
 
-# Everything the operation needs is in the params JSON; the instance name only repeats it
-# in readable form. python3 is always present on the worker (the harness itself runs on it).
-# batch_size is absent on the unbatched benchmarks, hence the default of 1.
-read -r OPERATION DIM DEVICE BATCH_SIZE <<EOF
-$(printf '%s' "$PARAMS" | python3 -c 'import json,sys; p=json.load(sys.stdin); print(p["operation"], p["dim"], p["device"], p.get("batch_size", 1))')
+# Everything the tool needs is in the params JSON; the benchmark and instance names only
+# repeat it in readable form. python3 is always present on the worker (the harness itself
+# runs on it). batch_size is absent on the unbatched benchmarks, hence the default of 1.
+read -r SET OPERATION DIM DEVICE BATCH_SIZE REPETITION <<EOF
+$(printf '%s' "$PARAMS" | python3 -c 'import json,sys; p=json.load(sys.stdin); print(p["set"], p["operation"], p["dim"], p["device"], p.get("batch_size", 1), p["repetition"])')
 EOF
 
 # Same path prepare_instance.sh wrote to; both run with the tool directory as their cwd.
 INPUT_FILE="inputs/${BENCHMARK}-${INSTANCE}.input"
 
-echo "Running $OPERATION on $BENCHMARK in ${DIM}d, batch $BATCH_SIZE, x$REPETITION, on $DEVICE -> $RESULTS_FILE"
+echo "Running $OPERATION on $SET in ${DIM}d, batch $BATCH_SIZE, x$REPETITION, on $DEVICE -> $RESULTS_FILE"
 
 # Report unsupported rather than silently falling back to the CPU, which would otherwise
 # be recorded as a GPU measurement.
@@ -57,9 +56,10 @@ if [ "$DEVICE" = gpu ]; then
 fi
 
 # TODO: call your library here, and nothing else — this is the measured region. Pass it
-# $OPERATION, $BENCHMARK, $DIM, $BATCH_SIZE, $DEVICE, $REPETITION and "$INPUT_FILE", and
+# $OPERATION, $SET, $DIM, $BATCH_SIZE, $DEVICE, $REPETITION and "$INPUT_FILE", and
 # let it dispatch on the operation itself: read the prepared inputs once, then perform the
 # operation $REPETITION times.
+
 # The 1 s stand-in below keeps the skeleton runnable as a test tool until you do; delete it.
 sleep 1
 

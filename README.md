@@ -8,11 +8,10 @@ in.
 
 Each instance names a set representation (`benchmark`, e.g. `zonotope` or its vectorized
 `zonotope-batched` variant), the case within it (`instance`, e.g. `matMul-500d-b10-gpu`),
-how often to repeat the operation (`repetition`), and everything the operation needs as
-JSON (`params`: `operation`, `dim`, `device`, plus `batch_size` on the batched
-benchmarks). Those columns are passed to your scripts in that order, after the interface
-version. Dispatch on `params` rather than on the instance name, which only repeats the
-same facts in readable form. What each operation must do is defined in the
+and everything the tool needs as JSON (`params`: `set`, `operation`, `dim`, `device`,
+`repetition`, plus `batch_size` on the batched benchmarks). Those columns are passed to
+your scripts in that order, after the interface version. Dispatch on `params` rather than
+on the names, which only repeat the same facts in readable form. What each operation must do is defined in the
 [benchmark catalog](https://github.com/CORA-COMP/benchmarks).
 
 ## What goes where
